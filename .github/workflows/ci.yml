@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Mirrors the versions declared in pyproject.toml classifiers.
+        # Every version in requires-python is exercised.
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        os: [ubuntu-latest]
+        include:
+          # One extra Windows job: tzdata is a platform-specific dependency
+          # there, and ZoneInfo behaviour differs enough to be worth pinning.
+          - python-version: "3.12"
+            os: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package and dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Verify the package imports from an installed environment
+        run: python -c "import temporal_awareness as t; print(t.__version__); print(t.TemporalContext.now().as_prompt_context())"
+
+      - name: Run the complete test suite
+        run: python -m pytest -v
+
+      - name: Confirm the repository is clean after the run
+        shell: bash
+        run: git diff --exit-code && git status --porcelain

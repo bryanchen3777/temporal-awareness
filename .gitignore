@@ -14,6 +14,9 @@ dist/
 venv/
 env/
 
+# uv lockfile — a library should not pin its consumers' resolver
+uv.lock
+
 # Test / coverage
 .pytest_cache/
 .coverage

@@ -83,9 +83,22 @@ class TestNoForbiddenDependencies:
         assert offenders == []
 
     def test_only_stdlib_and_internal_imports(self):
+        """Allowlist check over BOTH import forms.
+
+        `import openai` and `from openai import X` are different AST nodes.
+        Checking only ImportFrom lets a plain `import openai` walk straight
+        through, so both are covered here.
+        """
+
         for path in source_files():
             for node in ast.walk(parse(path)):
-                if isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        root = alias.name.split(".")[0]
+                        assert root in ALLOWED_IMPORT_ROOTS, (
+                            f"{path.name} imports unexpected module {alias.name}"
+                        )
+                elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
                     root = node.module.split(".")[0]
                     assert root in ALLOWED_IMPORT_ROOTS, (
                         f"{path.name} imports unexpected module {node.module}"
