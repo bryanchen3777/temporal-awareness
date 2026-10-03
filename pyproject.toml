@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "temporal-awareness"
+version = "0.1.0"
+description = "A lightweight, model-agnostic temporal context layer for AI agents."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Bryan Chen" }]
+keywords = ["temporal", "time", "agent", "llm", "context", "clock"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+# v0.1 has no third-party runtime dependencies.
+# tzdata is only the IANA timezone database, needed on platforms that do not
+# ship a system tz database (Windows). It is not a calendar/scheduler library.
+dependencies = [
+    "tzdata; platform_system == 'Windows'",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.urls]
+Homepage = "https://github.com/bryanchen3777/temporal-awareness"
+Repository = "https://github.com/bryanchen3777/temporal-awareness"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
