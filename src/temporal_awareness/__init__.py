@@ -1,14 +1,19 @@
-"""Temporal Awareness.
+"""Temporal Awareness — a temporal context layer for AI agents.
 
-A lightweight, model-agnostic temporal context layer for AI agents.
+This package provides human-readable temporal context. It is a context
+layer, not a reasoning or decision layer.
 
-Temporal Awareness answers one question:
+The layer answers one question:
 
     What is the current temporal situation?
 
 It does not answer:
 
     What should the agent do about it?
+
+Whether a consuming agent interprets that context, ignores it, or is
+measurably affected by it is a property of the agent, not of this
+package. Supplying context is not evidence of temporal cognition.
 
 Give the agent time. Do not tell the agent what time means.
 """

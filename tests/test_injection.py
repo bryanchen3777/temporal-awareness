@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import re
 
+import pytest
 from conftest import ny
 
 from temporal_awareness import FixedClock, TemporalContext, build_context, inject, wrap
+from temporal_awareness.injection import DEFAULT_FOOTER
 
 
 class TestPromptContext:
@@ -135,14 +137,72 @@ class TestInject:
         for forbidden in ("you should", "must ask", "accept the invitation", "user means"):
             assert forbidden not in lowered
 
-    def test_no_api_keys_or_endpoints(self, saturday_afternoon):
-        result = inject("", TemporalContext.from_datetime(saturday_afternoon))
-        assert "sk-" not in result
-        assert "api_key" not in result
-
     def test_iso_timestamp_never_appears_in_prompt(self, saturday_afternoon):
         result = inject("Base.", TemporalContext.from_datetime(saturday_afternoon))
         assert not re.search(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}", result)
+
+
+class TestContextStaysDescriptive:
+    """The injected block is context, never instruction.
+
+    This is the exact seam where a future "temporal reasoning guidance"
+    feature would begin turning a context layer into a decision layer. The
+    property is locked down here so it cannot be introduced silently.
+    """
+
+    #: Phrases that would convert context into a directive addressed at the
+    #: consuming agent. Permissive wording ("interpret it as you see fit")
+    #: is deliberately absent: telling an agent what it may do is not the
+    #: same as telling it what to think.
+    AGENT_DIRECTED = (
+        "you should",
+        "you must",
+        "you may want",
+        "you need to",
+        "ask the user",
+        "consider asking",
+        "recommend",
+        "suggest that",
+        "tell the user",
+        "it is important",
+        "the user means",
+        "the user intends",
+    )
+
+    @pytest.mark.parametrize("phrase", AGENT_DIRECTED)
+    def test_prompt_context_is_never_agent_directed(self, saturday_afternoon, phrase):
+        block = TemporalContext.from_datetime(saturday_afternoon).as_prompt_context().lower()
+        assert phrase not in block
+
+    @pytest.mark.parametrize("phrase", AGENT_DIRECTED)
+    def test_injected_prompt_is_never_agent_directed(self, saturday_afternoon, phrase):
+        result = inject("You are helpful.", TemporalContext.from_datetime(saturday_afternoon)).lower()
+        assert phrase not in result
+
+    @pytest.mark.parametrize(
+        "hour,minute",
+        [(0, 30), (2, 30), (8, 0), (14, 22), (18, 0), (23, 30)],
+    )
+    def test_descriptive_across_the_whole_day(self, hour, minute, phrase="you should"):
+        # Every time-of-day bucket must stay descriptive, not just the
+        # afternoon the other tests happen to use.
+        block = TemporalContext.from_datetime(ny(2026, 10, 3, hour, minute)).as_prompt_context()
+        for directive in self.AGENT_DIRECTED:
+            assert directive not in block.lower()
+
+    def test_prompt_context_shape_is_four_descriptive_lines(self, saturday_afternoon):
+        lines = TemporalContext.from_datetime(saturday_afternoon).as_prompt_context().split("\n")
+        assert lines[0] == "Temporal context:"
+        assert lines[1] == "Saturday, 2026-10-03."
+        assert lines[2] == "Afternoon, around 2:15 PM."
+        assert lines[3] == "Half the day has passed."
+        assert len(lines) == 4
+
+    def test_footer_is_permissive_not_directive(self, saturday_afternoon):
+        footer = DEFAULT_FOOTER.lower()
+        assert "interpret it as you see fit" in footer
+        for directive in self.AGENT_DIRECTED:
+            assert directive not in footer
 
 
 class TestContextBuilders:

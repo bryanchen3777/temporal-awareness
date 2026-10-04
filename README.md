@@ -23,9 +23,12 @@ Most AI systems expose time as a raw timestamp:
 2026-10-03T14:22:31-04:00
 ```
 
-That is useful for software, but it is not necessarily the most useful
-representation for an AI agent. A conversational agent may need to
-understand:
+That is useful for software, but it is a poor fit for language: it carries
+maximum precision and almost no usable context. Any consumer that wants to
+reason over *when* something happens has to reconstruct that coarse
+structure itself, on every call.
+
+This layer provides the reconstruction directly:
 
 ```
 Saturday.
@@ -33,8 +36,10 @@ Afternoon, around 2:15 PM.
 Half the day has passed.
 ```
 
-The goal is not to make the model "tell the time." The goal is to make time
-available as contextual information that an agent can interpret.
+The goal is not to make a model "tell the time." The goal is to make
+temporal structure available as readable context — and to leave every
+question about what a consuming agent does with it entirely outside this
+library.
 
 ---
 
@@ -116,6 +121,41 @@ It must **not** decide:
 - Accept the invitation.
 
 Those decisions belong to the consuming agent.
+
+Whether the consuming agent uses that context, ignores it, or is
+measurably affected by it is a question about the agent — not about this
+library. See [What this layer is not](#what-this-layer-is-not).
+
+---
+
+## What this layer is not
+
+Providing temporal context is an engineering capability. It is not, by
+itself, evidence that a consuming agent has temporal cognition.
+
+None of the following is evidence of temporal cognition:
+
+- Injecting this context into a prompt.
+- The context changing the agent's output.
+- The agent calling a clock or a temporal tool.
+- Tool-call frequency, or any ON/OFF behavioural delta.
+
+Those are **observable implementation behaviours**. They show that time
+information reached the model. They do not show that the model understood
+it, weighted it, or reasoned over it.
+
+Establishing temporal cognition requires a construct, an operational
+definition for it, and controls able to separate *"the agent used the
+time"* from *"the agent reacted to more text"*. This repository does not
+define those controls, does not define a threshold, and does not claim to.
+
+---
+
+## Scope of the change log
+
+This library's own behaviour is unchanged by this document. It describes
+what the library has always done: derive temporal structure and hand it
+over as context.
 
 ---
 
@@ -233,22 +273,31 @@ Those systems may consume Temporal Awareness, but do not belong inside it.
 
 ## Relationship to Soul OS
 
-Temporal Awareness can be used by Soul OS, but it is not part of Soul OS
-architecture.
+This repository is an independent engineering and research sandbox. It is
+not part of Soul OS architecture, and it does not modify Soul OS runtime.
 
 ```
-Temporal Awareness
+Temporal context layer
         │
         │ provides temporal context
         ▼
-Soul OS
+Consuming agent or system
         │
-        │ interprets the context
+        │ interprets, ignores, or is unaffected
         ▼
-Soul / Agency
+Agent behaviour
 ```
 
-Temporal Awareness therefore remains independently reusable.
+**Results obtained in this repository do not automatically constitute
+acceptance of any capability in another project.** Acceptance is governed
+by that project's own canonical construct, operationalization, controls,
+and gate. This library supplies a reusable capability; it supplies no
+evidence about any agent's cognition.
+
+Any experiment run against a consuming system — including a real
+counterfactual comparison — remains that project's work, with its own
+controls and its own decision criteria. Providing a context layer makes
+such an experiment *possible*. It does not make its result *true*.
 
 ---
 
